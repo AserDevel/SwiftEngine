@@ -13,7 +13,7 @@ SRC_DIR = src
 BUILD_DIR = build
 LINALG_DIR = $(SRC_DIR)/linalg
 GLAD_DIR = $(SRC_DIR)/glad
-GRAPHICS_DIR = $(SRC_DIR)/graphics
+GRAPHICS_DIR = $(SRC_DIR)/renderer
 
 # Source files
 LINALG_SRC = $(wildcard $(LINALG_DIR)/*.cpp)

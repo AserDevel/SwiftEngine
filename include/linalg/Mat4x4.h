@@ -19,8 +19,6 @@ struct Mat4x4 {
     void print();
 };
 
-Mat4x4 MatrixIdentity();
-
 Mat4x4 MatrixRotationX(float fAngleRad);
 
 Mat4x4 MatrixRotationY(float fAngleRad);
@@ -32,6 +30,8 @@ Mat4x4 MatrixRotation(float xRad, float yRad, float zRad);
 Mat4x4 MatrixProjection(float fFovDegrees, float fAspectRatio, float fNear, float fFar);
 
 Mat4x4 MatrixTranslation(float x, float y, float z);
+
+Mat4x4 MatrixScaling(float sx, float sy, float sz);
 
 Mat4x4 MatrixLookAt(Vec3& eye, Vec3& target, Vec3& up);
 

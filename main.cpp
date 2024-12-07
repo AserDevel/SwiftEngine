@@ -6,10 +6,9 @@
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include "linalg/linalg.h"
-#include "graphics/ShapeData.h"
-#include "graphics/Object.h"
-#include "graphics/ObjectManager.h"
-#include "graphics/Camera.h"
+#include "renderer/EntityManager.h"
+#include "renderer/Camera.h"
+#include "renderer/ResourceManager.h"
 
 #define PI 3.14159f
 
@@ -87,28 +86,26 @@ int main(int argc, char* argv[]) {
         return -1;
     }    
 
-    ObjectManager objMananger;
+    ResourceManager resourceManager;
     Camera camera(
-        Vec3(0.0f, 0.0f, 3.0f),  // Position
+        Vec3(0.0f, 0.0f, 0.0f),  // Position
         Vec3(0.0f, 1.0f, 0.0f),  // Up vector
-        -90.0f,                  // Yaw
+        -3.14f / 2,                  // Yaw
         0.0f,                    // Pitch
-        60.0f,                   // FOV
-        ASPECT_RATIO,            // Aspect ratio
+        90.0f,                   // FOV
+        1,                       // Aspect ratio
         0.1f,                    // Near plane
         100.0f                   // Far plane
     );
     float speed = 0.8f;
 
     // Load data to openGL
-    std::shared_ptr<ShapeData> shape = objMananger.getShape("lib/objects/cube.obj");
-    std::shared_ptr<Texture> texture = objMananger.getTexture("lib/textures/test.png");
-    std::shared_ptr<ShaderProgram> shader = objMananger.getShaderProgram("lib/shaders/shader3Dtextured.glsl");
+    std::shared_ptr<Shape> shape = resourceManager.getShape("lib/objects/cube.obj", true);
+    std::shared_ptr<Texture> texture = resourceManager.getTexture("lib/textures/test.png");
+    std::shared_ptr<Shader> shader = resourceManager.getShader("lib/shaders/textured3D.glsl");
 
-    Object cube(shape, texture, shader, Vec3(-2,0,-5), Vec3(0,0,0));
-    Object cube1(shape, texture, shader, Vec3(2,0,-5), Vec3(0,0,0));
-
-    Mat4x4 matProj = MatrixProjection(90, 1.0f / ASPECT_RATIO, 0.1f, 10.0f);
+    Entity cube(shader, texture, shape, { -2,0,8 });
+    Entity cube1(shader, texture, shape, { 2,0,8});
 
     // Main loop
     bool isRunning = true;
@@ -161,15 +158,13 @@ int main(int argc, char* argv[]) {
         glDepthRange(0.1f, 10.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        Mat4x4 matProj = camera.getProjectionMatrix();
-        Mat4x4 matView = camera.getViewMatrix();
+        Mat4x4 matProj = camera.getMatProj();
+        Mat4x4 matView = camera.getMatView();
+        Mat4x4 matCamera = camera.getMatCamera();
 
-        cube.direction = Vec3(0.001 * SDL_GetTicks(), 0.001 * SDL_GetTicks(), 0.001 * SDL_GetTicks());
-        cube.render(matProj, matView);
+        cube.render(matCamera);
+        cube1.render(matCamera);
 
-        cube1.direction = Vec3(0.001 * SDL_GetTicks(), 0.001 * SDL_GetTicks(), 0.001 * SDL_GetTicks());
-        cube1.render(matProj, matView);
-        
         // Swap buffers
         SDL_GL_SwapWindow(window);
 

@@ -1,7 +1,8 @@
-#include "graphics/Texture.h"
+#include "renderer/Texture.h"
 #include <SDL2/SDL_image.h>
 #include <iostream>
 
+// Creates a texture from filepath
 Texture::Texture(const char* filepath) {
 	// Load image using SDL_image
     SDL_Surface* surface = IMG_Load(filepath);
@@ -43,10 +44,11 @@ Texture::Texture(const char* filepath) {
     textureID = texture;
 }
 
+// Binds uniform texuture to programID
 void Texture::bind(GLuint programID) {
     if (textureID) {
 		// Get the location of the texture uniform in the fragment shader
-    	GLuint textureLocation = glGetUniformLocation(programID, "texture1");
+    	GLuint textureLocation = glGetUniformLocation(programID, "textureData");
     	glUniform1i(textureLocation, 0);  // Set texture unit 0 (first texture)
 
     	// Bind the texture (bind the texture before drawing)

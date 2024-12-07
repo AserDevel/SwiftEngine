@@ -1,14 +1,18 @@
-#include "graphics/Camera.h"
+#include "renderer/Camera.h"
 #include "linalg/Mat4x4.h"
 #include <math.h>
 
-Mat4x4 Camera::getViewMatrix() {
+Mat4x4 Camera::getMatView() {
     Vec3 vTarget = position + front;
     return MatrixLookAt(position, vTarget, up);
 }
 
-Mat4x4 Camera::getProjectionMatrix() {
+Mat4x4 Camera::getMatProj() {
     return MatrixProjection(fov, aspectRatio, nearPlane, farPlane);
+}
+
+Mat4x4 Camera::getMatCamera() {
+    return getMatProj() * getMatView();
 }
 
 void Camera::processKeyboardInput(const std::string& direction, float deltaTime, float speed) {

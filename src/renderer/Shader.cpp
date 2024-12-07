@@ -1,9 +1,25 @@
-#include "graphics/ShaderProgram.h"
+#include "renderer/Shader.h"
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <unordered_map>
+
+void Shader::use(Mat4x4 matCamera) {
+    glUseProgram(programID);
+
+    GLuint uniformLocation = glGetUniformLocation(programID, "matCamera");
+
+	if (uniformLocation == -1) {
+		std::cerr << "Uniform 'matCamera' not found in shader program\n";
+	} else {
+		glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &matCamera[0][0]);
+		GLenum error = glGetError();
+		if (error != GL_NO_ERROR) {
+			std::cerr << "Error while setting uniform 'matCamera': " << error << "\n";
+		}
+	}
+}
 
 // Function to load and split shaders
 std::unordered_map<std::string, std::string> loadShaderFromFile(const std::string& filePath) {
@@ -101,7 +117,7 @@ GLuint compileShaderProgram(std::string sVertexSourceCode, std::string sFragment
 }
 
 // load and compile shader program from file
-ShaderProgram::ShaderProgram(const char* shaderFile) {  
+Shader::Shader(const char* shaderFile) {  
     std::unordered_map<std::string, std::string> shaders = loadShaderFromFile(shaderFile);
     this->programID = compileShaderProgram(shaders["vertex"], shaders["fragment"]);
 }

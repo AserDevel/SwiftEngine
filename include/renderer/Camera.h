@@ -28,9 +28,11 @@ public:
         updateCameraVectors();
     }
 
-    Mat4x4 getViewMatrix();
+    Mat4x4 getMatView();
 
-    Mat4x4 getProjectionMatrix();
+    Mat4x4 getMatProj();
+
+    Mat4x4 getMatCamera();
 
     void processKeyboardInput(const std::string& direction, float deltaTime, float speed);
 

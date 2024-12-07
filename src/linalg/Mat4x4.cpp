@@ -19,15 +19,16 @@ Vec3 Mat4x4::operator*(const Vec3& i) {
     return v;
 }
 
+// Column major matrix multiplication (applies right to left)
 Mat4x4 Mat4x4::operator*(const Mat4x4& m) {
     Mat4x4 matrix(1);
     for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
-            matrix[r][c] = 
-            this->data[r][0] * m[0][c] + 
-            this->data[r][1] * m[1][c] + 
-            this->data[r][2] * m[2][c] +
-            this->data[r][3] * m[3][c];
+            matrix[c][r] = 
+            this->data[0][r] * m[c][0] + 
+            this->data[1][r] * m[c][1] + 
+            this->data[2][r] * m[c][2] +
+            this->data[3][r] * m[c][3];
         }
     }
     return matrix;
@@ -109,6 +110,14 @@ Mat4x4 MatrixTranslation(float x, float y, float z) {
     matrix[3][0] = x;
     matrix[3][1] = y;
     matrix[3][2] = z;
+    return matrix;
+}
+
+Mat4x4 MatrixScaling(float sx, float sy, float sz) {
+    Mat4x4 matrix(1);
+    matrix[0][0] = sx; 
+    matrix[1][1] = sy; 
+    matrix[2][2] = sz; 
     return matrix;
 }
 
