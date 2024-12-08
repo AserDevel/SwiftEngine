@@ -35,8 +35,8 @@ void Camera::processMouseInput(float xOffset, float yOffset, float sensitivity) 
     pitch += yOffset;
 
     // Constrain pitch to avoid gimbal lock
-    if (pitch > 89.0f) pitch = 89.0f;
-    if (pitch < -89.0f) pitch = -89.0f;
+    if (pitch > PI / 2.01f) pitch = PI / 2.01f;
+    if (pitch < -PI / 2.01f) pitch = -PI / 2.01f;
 
     // Update camera vectors
     updateCameraVectors();

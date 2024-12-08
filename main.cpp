@@ -10,11 +10,12 @@
 #include "renderer/Camera.h"
 #include "renderer/ResourceManager.h"
 
-#define PI 3.14159f
-
 // Window dimensions
 int WINDOW_SIZE = 500;
 const float ASPECT_RATIO = 16.0f / 9.0f;
+bool isRunning = true;
+std::unordered_map<SDL_Scancode, bool> keyState;
+
 
 bool initializeWindow(SDL_Window** window, SDL_GLContext* context) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -75,6 +76,34 @@ void handleWindowResize(SDL_Window* window) {
     glViewport(0, 0, WINDOW_SIZE * ASPECT_RATIO, WINDOW_SIZE);
 }
 
+void processInput(Camera& camera, float deltaTime, float speed) {
+    if (keyState[SDL_SCANCODE_W]) {
+        camera.processKeyboardInput("FORWARD", deltaTime, speed);
+    }
+    if (keyState[SDL_SCANCODE_S]) {
+        camera.processKeyboardInput("BACKWARD", deltaTime, speed);
+    }
+    if (keyState[SDL_SCANCODE_A]) {
+        camera.processKeyboardInput("LEFT", deltaTime, speed);
+    }
+    if (keyState[SDL_SCANCODE_D]) {
+        camera.processKeyboardInput("RIGHT", deltaTime, speed);
+    }
+    if (keyState[SDL_SCANCODE_UP]) {
+        camera.processMouseInput(0, -1, 0.05f);
+    }
+    if (keyState[SDL_SCANCODE_DOWN]) {
+        camera.processMouseInput(0, 1, 0.05f);
+    }
+    if (keyState[SDL_SCANCODE_LEFT]) {
+        camera.processMouseInput(1, 0, 0.05f);
+    }
+    if (keyState[SDL_SCANCODE_RIGHT]) {
+        camera.processMouseInput(-1, 0, 0.05f);
+    }
+}
+
+
 int main(int argc, char* argv[]) {
     // Global instances
     SDL_Window* window = nullptr;
@@ -85,91 +114,83 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error initializing window " << SDL_GetError() << std::endl;
         return -1;
     }    
-
+    
+    EntityManager entityManager;
     ResourceManager resourceManager;
     Camera camera(
         Vec3(0.0f, 0.0f, 0.0f),  // Position
         Vec3(0.0f, 1.0f, 0.0f),  // Up vector
-        -3.14f / 2,                  // Yaw
+        -PI / 2,                 // Yaw
         0.0f,                    // Pitch
         90.0f,                   // FOV
-        1,                       // Aspect ratio
+        1 / ASPECT_RATIO,        // Aspect ratio
         0.1f,                    // Near plane
-        100.0f                   // Far plane
+        1000.0f                  // Far plane
     );
-    float speed = 0.8f;
-
+    float speed = 2.0f;
+    
     // Load data to openGL
-    std::shared_ptr<Shape> shape = resourceManager.getShape("lib/objects/cube.obj", true);
-    std::shared_ptr<Texture> texture = resourceManager.getTexture("lib/textures/test.png");
-    std::shared_ptr<Shader> shader = resourceManager.getShader("lib/shaders/textured3D.glsl");
+    std::shared_ptr<Shape> cube = resourceManager.getShape("lib/objects/cube.obj", true);
+    std::shared_ptr<Texture> stone = resourceManager.getTexture("lib/textures/stone.png");
+    std::shared_ptr<Texture> dirt = resourceManager.getTexture("lib/textures/dirt.png");
+    std::shared_ptr<Texture> cobblestone = resourceManager.getTexture("lib/textures/cobblestone.png");
+    std::shared_ptr<Shader> instancedShader = resourceManager.getShader("lib/shaders/tex3Dinstanced.glsl");
+    std::shared_ptr<Shader> singleShader = resourceManager.getShader("lib/shaders/tex3Dsingle.glsl");
 
-    Entity cube(shader, texture, shape, { -2,0,8 });
-    Entity cube1(shader, texture, shape, { 2,0,8});
+    auto cubes = entityManager.createEntityBatch(instancedShader, cube);
+    entityManager.createEntity(singleShader, cube, cobblestone);
+
+    for (int i = 0; i < 100; i++) {
+        for (int j = 0; j < 100; j++) {
+            if (j % 2) {
+                cubes->addInstance(dirt, { i, -2, j });
+            } else {
+                cubes->addInstance(stone, { i, -2, j});
+            }
+        }
+    }
 
     // Main loop
-    bool isRunning = true;
-    SDL_Event event;
+    
+    float lastFrameTime = SDL_GetTicks() / 1000.0f;
     while (isRunning) {
+        float currentTime = SDL_GetTicks() / 1000.0f;
+        float deltaTime = currentTime - lastFrameTime;
+        lastFrameTime = currentTime;
         // Poll for events
+        SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 isRunning = false;
-            }
-            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+            } else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                 handleWindowResize(window);
-            }
-            //if (event.type = SDL_MOUSEMOTION) {
-            //    camera.processMouseInput(event.motion.xrel, event.motion.yrel, 0.01);
-            //}
-            if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                case SDLK_UP:
-                    camera.processMouseInput(0, -1);
-                    break;
-                case SDLK_DOWN:
-                    camera.processMouseInput(0, 1);
-                    break;
-                case SDLK_RIGHT:
-                    camera.processMouseInput(-1, 0);
-                    break;
-                case SDLK_LEFT:
-                    camera.processMouseInput(1, 0);
-                    break;
-                case SDLK_a:
-                    camera.processKeyboardInput("LEFT", 5, speed);
-                    break;
-                case SDLK_d:
-                    camera.processKeyboardInput("RIGHT", 5, speed);                    
-                    break;
-                case SDLK_w:
-                    camera.processKeyboardInput("FORWARD", 5, speed);
-                    break;
-                case SDLK_s:
-                    camera.processKeyboardInput("BACKWARD", 5, speed);                    
-                    break;
-                default:
-                    break;
-                }
-            }
+            } else if (event.type == SDL_KEYDOWN) {
+                keyState[event.key.keysym.scancode] = true;
+            } else if (event.type == SDL_KEYUP) {
+                keyState[event.key.keysym.scancode] = false;
+            } else if (event.type == SDL_MOUSEMOTION) {
+                camera.processMouseInput(event.motion.xrel, event.motion.yrel, 0.01);
+            }        
         }
+        
+        processInput(camera, deltaTime, speed);
+
         // Clear the screen
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glDepthRange(0.1f, 10.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        Mat4x4 matProj = camera.getMatProj();
-        Mat4x4 matView = camera.getMatView();
         Mat4x4 matCamera = camera.getMatCamera();
 
-        cube.render(matCamera);
-        cube1.render(matCamera);
+        auto start = SDL_GetPerformanceCounter();
+
+        entityManager.renderAllEntities(matCamera);
+
+        auto end = SDL_GetPerformanceCounter();
+        std::cout << "Frame time (ms): " << (end - start) * 1000 / SDL_GetPerformanceFrequency() << std::endl;
 
         // Swap buffers
         SDL_GL_SwapWindow(window);
-
-        // FPS
-        usleep(1000000 / 60); 
     }
 
     // Cleanup

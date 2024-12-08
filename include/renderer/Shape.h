@@ -23,11 +23,10 @@ private:
     GLuint VAO; // Vertex Array Object (stores attribute pointers)
     GLuint VBO; // Vertex Buffer Object (stores vertices aka geometry data)
     GLuint IBO; // Index Buffer Object (stores indicies to vertices)
-    GLuint instanceVBO; // Stores instance transformation data
 
     void loadByIndexArray(std::string filename);
     void loadByVertexArray(std::string filename);
-    void sendToGPU();
+    void loadToGPU();
     void cleanup();
 
 public:
@@ -37,10 +36,10 @@ public:
     GLuint getVBO() { return VBO; }
     GLuint getVAO() { return VAO; }
     int getNumIndices() { return indices.size(); }
-    int getNumVertices() { return indices.size(); }
+    int getNumVertices() { return vertices.size(); }
 
     void loadFromOBJFile(std::string filename, bool loadByIndices = true);
-    void draw(GLuint programID, std::vector<Mat4x4> transforms);
+    void drawInstances(GLuint numInstances);
 };
 
 #endif

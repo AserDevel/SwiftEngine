@@ -13,24 +13,28 @@ Shape::Shape(const char* shapeFile, bool loadByIndices) {
 void Shape::cleanup() {
 	vertices.clear();
 	indices.clear();
+    
+    // Unbind and delete buffers
+	if (VBO) {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDeleteBuffers(1, &VBO);
+    } 
+    if (VAO) {
+        glBindVertexArray(0);
+        glDeleteVertexArrays(1, &VAO);
+    } 
+    if (IBO) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glDeleteBuffers(1, &IBO);
+    } 
 
-	if (VBO) glDeleteBuffers(1, &VBO);
-    if (VAO) glDeleteVertexArrays(1, &VAO);
-    if (IBO) glDeleteBuffers(1, &IBO);
-    if (instanceVBO) glDeleteBuffers(1, &instanceVBO);
-
-    VBO = VAO = IBO = instanceVBO = 0;
+    VBO = VAO = IBO = 0;
 }
 
-void Shape::sendToGPU() {    
+void Shape::loadToGPU() {    
     // Generate and bind Vertex Array Object (VAO)
 	glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-
-    // Generate and bind TransformVBO
-    glGenBuffers(1, &instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Mat4x4), nullptr, GL_DYNAMIC_DRAW);
 
     // Generate and bind Vertex Buffer Object (VBO)
     glGenBuffers(1, &VBO);
@@ -60,30 +64,15 @@ void Shape::sendToGPU() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), indices.data(), GL_STATIC_DRAW);
 
-    glBindVertexArray(VAO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 	glBindVertexArray(0);
 }
 
-void Shape::draw(GLuint programID, std::vector<Mat4x4> transforms) {
-    // Bind the VAO for the shape
-    glBindVertexArray(VAO);
-
-    // Set up vertex attributes for instancing
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, transforms.size() * sizeof(Mat4x4), &transforms[0][0][0]);
-
-    for (int i = 0; i < 4; i++) {
-        glEnableVertexAttribArray(3 + i);  // Instance transform (one for each column of the matrix)
-        glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(Mat4x4), (void*)(sizeof(float) * i * 4));
-        glVertexAttribDivisor(3 + i, 1);  // Tell OpenGL this attribute should be updated per instance
-    }
-    
-    // Draw the shape using instancing
-    if (indices.size()) {
-        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0, transforms.size());
+void Shape::drawInstances(GLuint numInstances) {
+    // Draw shape
+    if (!indices.empty()) {
+        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0, numInstances);
     } else {
-        glDrawArraysInstanced(GL_TRIANGLES, 0, vertices.size(), transforms.size());
+        glDrawArraysInstanced(GL_TRIANGLES, 0, vertices.size(), numInstances);
     }
 }
 
@@ -96,7 +85,7 @@ void Shape::loadFromOBJFile(std::string filename, bool loadByIndices) {
 	else
 		loadByVertexArray(filename);
     
-    sendToGPU();
+    loadToGPU();
 }
 
 void Shape::loadByIndexArray(std::string filename) {
@@ -185,9 +174,6 @@ void Shape::loadByIndexArray(std::string filename) {
     }
 
     f.close();
-
-    // Output number of loaded vertices and indices
-    std::cout << "Loaded " << vertices.size() << " unique vertices and " << indices.size() << " indices.\n";
 }
 
 void Shape::loadByVertexArray(std::string filename) {
