@@ -7,10 +7,13 @@
 #include <SDL2/SDL.h>
 
 class Texture {
+    void loadTextureToGPU();
+
 public:
     GLuint textureID;
-    SDL_Surface* surface;
 
+    SDL_Surface* surface;
+   
     Texture(const char* textureFile);
 
     ~Texture() {
@@ -19,28 +22,30 @@ public:
             glDeleteTextures(1, &textureID);
         }
         SDL_FreeSurface(surface);
-    }
-
-    void loadToGPU();
+    }    
 };
 
 class TextureArray {
 public:   
-    std::vector<std::shared_ptr<Texture>> array;
     GLuint textureArrayID;
 
-    TextureArray() {}
+    std::vector<std::shared_ptr<Texture>> array;
+
+    TextureArray() {
+        // Generate ID
+        glGenTextures(1, &textureArrayID);
+    }
 
     ~TextureArray() {
+        // Cleanup
         if (textureArrayID) {
             glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
             glDeleteTextures(1, &textureArrayID);
         }        
     }
 
-    void addTexture(std::shared_ptr<Texture> texture);
-
-    void loadToGPU();
+    // Loads the current array into GPU overwriting the last one
+    void loadTexturesToGPU();
 };
 
 

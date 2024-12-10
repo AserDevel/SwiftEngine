@@ -121,6 +121,15 @@ Mat4x4 MatrixScaling(float sx, float sy, float sz) {
     return matrix;
 }
 
+Mat4x4 MatrixWorld(Vec3 pos, Vec3 scale, Vec3 dir) {
+    Mat4x4 matWorld(1);
+    matWorld = MatrixTranslation(pos.x, pos.y, pos.z) * 
+            MatrixScaling(scale.x, scale.y, scale.z) * 
+            MatrixRotation(dir.x, dir.y, dir.z);
+            
+    return matWorld;
+} 
+
 Mat4x4 MatrixLookAt(Vec3& eye, Vec3& target, Vec3& up) {
     Vec3 zAxis = eye - target;
     zAxis = normalise(zAxis);

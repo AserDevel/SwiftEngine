@@ -10,10 +10,10 @@ layout (location = 4) in mat4 matWorld;
 out vec2 vTexCoord;
 flat out uint textureIndex;
 
-uniform mat4 matTransform;
+uniform mat4 matCamera;
 
 void main() {
-    gl_Position = matTransform * matWorld * vec4(position, 1.0);
+    gl_Position = matCamera * matWorld * vec4(position, 1.0);
     vTexCoord = texCoord;
     textureIndex = texIndex;
 }

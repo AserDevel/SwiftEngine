@@ -1,4 +1,4 @@
-#include "renderer/Camera.h"
+#include "graphics/Camera.h"
 #include "linalg/Mat4x4.h"
 #include <math.h>
 
@@ -25,13 +25,18 @@ void Camera::processKeyboardInput(const std::string& direction, float deltaTime,
         position -= (right * velocity);
     if (direction == "RIGHT")
         position += (right * velocity);
+    if (direction == "UP")
+        position.y += velocity;
+    if (direction == "DOWN")
+        position.y -= velocity;
+
 }
 
 void Camera::processMouseInput(float xOffset, float yOffset, float sensitivity) {
     xOffset *= sensitivity;
     yOffset *= sensitivity;
 
-    yaw += xOffset;
+    yaw -= xOffset;
     pitch += yOffset;
 
     // Constrain pitch to avoid gimbal lock

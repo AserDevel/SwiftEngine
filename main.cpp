@@ -3,19 +3,18 @@
 #include <time.h>
 #include <unistd.h>
 #include <limits>
+#include <memory>
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include "linalg/linalg.h"
-#include "renderer/EntityManager.h"
-#include "renderer/Camera.h"
-#include "renderer/ResourceManager.h"
+#include "graphics/Camera.h"
+#include "managers/SystemManager.h"
+#include "managers/ComponentManager.h"
+#include "managers/ResourceManager.h"
 
 // Window dimensions
-int WINDOW_SIZE = 500;
-const float ASPECT_RATIO = 16.0f / 9.0f;
-bool isRunning = true;
-std::unordered_map<SDL_Scancode, bool> keyState;
-
+int WINDOW_SIZE = 600;
+float ASPECT_RATIO = 16.0f / 9.0f;
 
 bool initializeWindow(SDL_Window** window, SDL_GLContext* context) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -33,10 +32,10 @@ bool initializeWindow(SDL_Window** window, SDL_GLContext* context) {
         SDL_WINDOWPOS_CENTERED,
         WINDOW_SIZE * ASPECT_RATIO,
         WINDOW_SIZE,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
+        SDL_WINDOW_OPENGL
     );
 
-    if (!*window) {
+    if (!window) {
         std::cerr << "Error creating SDL window: " << SDL_GetError() << std::endl;
         SDL_Quit();
         return false;
@@ -64,46 +63,6 @@ bool initializeWindow(SDL_Window** window, SDL_GLContext* context) {
     return true;
 }
 
-void handleWindowResize(SDL_Window* window) {
-    int w, h;
-    SDL_GetWindowSize(window, &w, &h);
-    if (h * ASPECT_RATIO > w ) {
-        WINDOW_SIZE = h;
-    } else {
-        WINDOW_SIZE = w / ASPECT_RATIO;
-    }
-    SDL_SetWindowSize(window, WINDOW_SIZE * ASPECT_RATIO, WINDOW_SIZE);
-    glViewport(0, 0, WINDOW_SIZE * ASPECT_RATIO, WINDOW_SIZE);
-}
-
-void processInput(Camera& camera, float deltaTime, float speed) {
-    if (keyState[SDL_SCANCODE_W]) {
-        camera.processKeyboardInput("FORWARD", deltaTime, speed);
-    }
-    if (keyState[SDL_SCANCODE_S]) {
-        camera.processKeyboardInput("BACKWARD", deltaTime, speed);
-    }
-    if (keyState[SDL_SCANCODE_A]) {
-        camera.processKeyboardInput("LEFT", deltaTime, speed);
-    }
-    if (keyState[SDL_SCANCODE_D]) {
-        camera.processKeyboardInput("RIGHT", deltaTime, speed);
-    }
-    if (keyState[SDL_SCANCODE_UP]) {
-        camera.processMouseInput(0, -1, 0.05f);
-    }
-    if (keyState[SDL_SCANCODE_DOWN]) {
-        camera.processMouseInput(0, 1, 0.05f);
-    }
-    if (keyState[SDL_SCANCODE_LEFT]) {
-        camera.processMouseInput(1, 0, 0.05f);
-    }
-    if (keyState[SDL_SCANCODE_RIGHT]) {
-        camera.processMouseInput(-1, 0, 0.05f);
-    }
-}
-
-
 int main(int argc, char* argv[]) {
     // Global instances
     SDL_Window* window = nullptr;
@@ -114,83 +73,73 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error initializing window " << SDL_GetError() << std::endl;
         return -1;
     }    
-    
-    EntityManager entityManager;
-    ResourceManager resourceManager;
-    Camera camera(
+
+    SDL_ShowCursor(SDL_DISABLE);
+
+    std::shared_ptr camera = std::make_shared<Camera>(
         Vec3(0.0f, 0.0f, 0.0f),  // Position
         Vec3(0.0f, 1.0f, 0.0f),  // Up vector
-        -PI / 2,                 // Yaw
-        0.0f,                    // Pitch
+        0,                       // Yaw
+        0,                       // Pitch
         90.0f,                   // FOV
-        1 / ASPECT_RATIO,        // Aspect ratio
+        1,                       // Aspect ratio
         0.1f,                    // Near plane
         1000.0f                  // Far plane
     );
-    float speed = 2.0f;
     
+    // init managers
+    auto& EM = EntityManager::getInstance();
+    auto& CM = ComponentManager::getInstance();
+    auto& RM = ResourceManager::getInstance();
+    auto& SM = SystemManager::getInstance();
+
     // Load data to openGL
-    std::shared_ptr<Shape> cube = resourceManager.getShape("lib/objects/cube.obj", true);
-    std::shared_ptr<Texture> stone = resourceManager.getTexture("lib/textures/stone.png");
-    std::shared_ptr<Texture> dirt = resourceManager.getTexture("lib/textures/dirt.png");
-    std::shared_ptr<Texture> cobblestone = resourceManager.getTexture("lib/textures/cobblestone.png");
-    std::shared_ptr<Shader> instancedShader = resourceManager.getShader("lib/shaders/tex3Dinstanced.glsl");
-    std::shared_ptr<Shader> singleShader = resourceManager.getShader("lib/shaders/tex3Dsingle.glsl");
+    std::shared_ptr<Shape> cube = RM.getShape("lib/objects/cube.obj", true);
+    std::shared_ptr<Texture> stone = RM.getTexture("lib/textures/stone.png");
+    std::shared_ptr<Texture> dirt = RM.getTexture("lib/textures/dirt.png");
+    std::shared_ptr<Texture> cobblestone = RM.getTexture("lib/textures/cobblestone.png");
 
-    auto cubes = entityManager.createEntityBatch(instancedShader, cube);
-    entityManager.createEntity(singleShader, cube, cobblestone);
-
-    for (int i = 0; i < 100; i++) {
-        for (int j = 0; j < 100; j++) {
-            if (j % 2) {
-                cubes->addInstance(dirt, { i, -2, j });
-            } else {
-                cubes->addInstance(stone, { i, -2, j});
-            }
-        }
-    }
-
-    // Main loop
+    auto entity = EM.createEntity();
+    Renderable cobble = { cube, cobblestone };
+    Transform transform = { { 0,0,-2 } };
+    CM.addComponent(entity, cobble);
+    CM.addComponent(entity, transform);
     
     float lastFrameTime = SDL_GetTicks() / 1000.0f;
-    while (isRunning) {
+    GameState currentState = NONE;
+    while (currentState != QUIT) {
         float currentTime = SDL_GetTicks() / 1000.0f;
         float deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
-        // Poll for events
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                isRunning = false;
-            } else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                handleWindowResize(window);
-            } else if (event.type == SDL_KEYDOWN) {
-                keyState[event.key.keysym.scancode] = true;
-            } else if (event.type == SDL_KEYUP) {
-                keyState[event.key.keysym.scancode] = false;
-            } else if (event.type == SDL_MOUSEMOTION) {
-                camera.processMouseInput(event.motion.xrel, event.motion.yrel, 0.01);
-            }        
-        }
         
-        processInput(camera, deltaTime, speed);
+        // Check for state switching and update systems accordingly
+        if (currentState != SM.getState()) {
+            currentState = SM.getState();
+            SM.clearSystems();
+            switch (currentState) {
+            case QUIT:
+                break;
+            case INGAME:
+                SM.registerSystem<InputSystem>(window, camera);
+                SM.registerSystem<RenderSystem>(window, camera);
+                //SM.registerSystem<PhysicsSystem>();
+                break;
+            case MAINMENU:
+                SM.registerSystem<InputSystem>(window, camera);
+                SM.registerSystem<RenderSystem>(window, camera);
+                break;
+            case PAUSEMENU:
+                SM.registerSystem<InputSystem>(window, camera);
+                SM.registerSystem<RenderSystem>(window, camera);
+                break;
+            default:
+                break;
+            }
+        }
 
-        // Clear the screen
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glDepthRange(0.1f, 10.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        Mat4x4 matCamera = camera.getMatCamera();
-
-        auto start = SDL_GetPerformanceCounter();
-
-        entityManager.renderAllEntities(matCamera);
-
-        auto end = SDL_GetPerformanceCounter();
-        std::cout << "Frame time (ms): " << (end - start) * 1000 / SDL_GetPerformanceFrequency() << std::endl;
-
-        // Swap buffers
-        SDL_GL_SwapWindow(window);
+        // process and update this frame
+        SM.processEvents(deltaTime);
+        SM.update(deltaTime);
     }
 
     // Cleanup

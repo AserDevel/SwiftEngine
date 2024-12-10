@@ -8,6 +8,7 @@
 struct Mat4x4 {
     float data[4][4] = { 0 };
 
+    Mat4x4() {};
     Mat4x4(float i);
 
     float* operator[](std::size_t row) { return data[row]; }
@@ -32,6 +33,8 @@ Mat4x4 MatrixProjection(float fFovDegrees, float fAspectRatio, float fNear, floa
 Mat4x4 MatrixTranslation(float x, float y, float z);
 
 Mat4x4 MatrixScaling(float sx, float sy, float sz);
+
+Mat4x4 MatrixWorld(Vec3 pos, Vec3 scale, Vec3 dir);
 
 Mat4x4 MatrixLookAt(Vec3& eye, Vec3& target, Vec3& up);
 

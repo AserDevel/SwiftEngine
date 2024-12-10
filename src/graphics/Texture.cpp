@@ -1,10 +1,12 @@
-#include "renderer/Texture.h"
+#include "graphics/Texture.h"
 #include <SDL2/SDL_image.h>
 #include <iostream>
 #include <vector>
 
 // Creates a texture from filepath
 Texture::Texture(const char* filepath) {
+    // Generate textureID
+    glGenTextures(1, &textureID);
 	// Load image using SDL_image
     SDL_Surface* surface = IMG_Load(filepath);
     if (!surface) {
@@ -19,12 +21,12 @@ Texture::Texture(const char* filepath) {
     }
     SDL_FreeSurface(surface);
     this->surface = formattedSurface;
+
+    // load texture to GPU so it's ready for rendering.
+    loadTextureToGPU();
 }
 
-void Texture::loadToGPU() {
-    if (textureID) glDeleteTextures(1, &textureID);  // Delete potential existing textures
-
-    glGenTextures(1, &textureID);
+void Texture::loadTextureToGPU() {
     glBindTexture(GL_TEXTURE_2D, textureID);
 
     // Set texture parameters (filtering, wrapping)
@@ -43,10 +45,7 @@ void Texture::loadToGPU() {
     }
 }
     
-void TextureArray::loadToGPU() {
-    if (textureArrayID) glDeleteTextures(1, &textureArrayID);
-
-    glGenTextures(1, &textureArrayID);
+void TextureArray::loadTexturesToGPU() {
     glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayID);
 
     int w = array[0]->surface->w, h = array[0]->surface->h;

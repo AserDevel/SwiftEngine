@@ -8,9 +8,13 @@
 #include <string.h>
 
 class Shader {
-public:
     GLuint programID;
 
+    std::unordered_map<std::string, std::string> loadShadersFromFile(const std::string& filePath);
+
+    GLuint compileShaderProgram(const char* vertexSourceCode, const char* fragmentSourceCode);
+
+public:
     Shader(const char* shaderFile);
 
     ~Shader() {
@@ -22,15 +26,11 @@ public:
 
     void use();
 
-    void bindMatrix(Mat4x4 matTransform);
+    void bindMatrix(Mat4x4 matrix, const char* name);
 
     void bindTexture(GLuint textureID);
 
-    void bindTextureArray(GLuint textureArray);
-
-    std::unordered_map<std::string, std::string> loadShadersFromFile(const std::string& filePath);
-
-    GLuint compileShaderProgram(const char* vertexSourceCode, const char* fragmentSourceCode);
+    void bindTextureArray(GLuint textureArrayID);
 };
 
 #endif

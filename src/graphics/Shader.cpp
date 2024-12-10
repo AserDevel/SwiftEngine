@@ -3,22 +3,22 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
-#include "renderer/Shader.h"
+#include "graphics/Shader.h"
 
 void Shader::use() {
     glUseProgram(programID);
 }
 
-void Shader::bindMatrix(Mat4x4 matTransform) {
-    GLuint uniformLocation = glGetUniformLocation(programID, "matTransform");
+void Shader::bindMatrix(Mat4x4 matrix, const char* name) {
+    GLuint uniformLocation = glGetUniformLocation(programID, name);
 	if (uniformLocation == -1) {
-		std::cerr << "Uniform 'matTransform' not found in shader program\n";
+		std::cerr << "Uniform '" << name << "' not found in shader program" << std::endl;
 	} else {
-		glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &matTransform[0][0]);
+		glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &matrix[0][0]);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
-			std::cerr << "Error while setting uniform 'matTransform': " << error << "\n";
-		}
+            std::cerr << "Error while setting uniform '" << name << "': " << glGetError() << std::endl;
+        }
 	}
 }
 
@@ -28,15 +28,15 @@ void Shader::bindTexture(GLuint textureID) {
     glBindTexture(GL_TEXTURE_2D, textureID);
 
     // Get the uniform location
-    GLuint uniformLocation = glGetUniformLocation(programID, "textureData");
+    GLuint uniformLocation = glGetUniformLocation(programID, "textureSampler");
     glUniform1i(uniformLocation, 0);  // Set texture unit 0 (first texture)
 	if (uniformLocation == -1) {
-		std::cerr << "Uniform 'textureData' not found in shader program\n";
+		std::cerr << "Uniform 'textureSampler' not found in shader program\n";
 	} else {
 		glUniform1i(uniformLocation, 0); // Corresponds to GL_TEXTURE0
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
-			std::cerr << "Error while setting uniform 'textureData': " << error << "\n";
+			std::cerr << "Error while setting uniform 'textureSampler': " << error << "\n";
 		}
 	}
 }

@@ -7,10 +7,10 @@ layout (location = 2) in vec3 normal;
 
 out vec2 TexCoord;
 
-uniform mat4 matTransform;
+uniform mat4 matFullTransform;
 
 void main() {
-    gl_Position = matTransform * vec4(position, 1.0);
+    gl_Position = matFullTransform * vec4(position, 1.0);
     TexCoord = texCoord;
 }
 
@@ -20,10 +20,10 @@ void main() {
 
 in vec2 TexCoord;
 
-uniform sampler2D textureData; 
+uniform sampler2D textureSampler;
 
 out vec4 fragColor;
 
 void main() {
-    fragColor = texture(textureData, TexCoord);
+    fragColor = texture(textureSampler, TexCoord);
 }

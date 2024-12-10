@@ -1,41 +1,40 @@
-#include "renderer/Shape.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <linalg/linalg.h>
 #include <tuple>
 #include <map>
+#include "graphics/Shape.h"
 
 Shape::Shape(const char* shapeFile, bool loadByIndices) {
-	this->loadFromOBJFile(shapeFile, loadByIndices);
+    this->loadFromOBJFile(shapeFile, loadByIndices);
 }
 
 void Shape::cleanup() {
 	vertices.clear();
 	indices.clear();
     
-    // Unbind and delete buffers
-	if (VBO) {
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDeleteBuffers(1, &VBO);
-    } 
-    if (VAO) {
-        glBindVertexArray(0);
-        glDeleteVertexArrays(1, &VAO);
-    } 
-    if (IBO) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glDeleteBuffers(1, &IBO);
-    } 
+    // delete buffers
+	if (VBO) glDeleteBuffers(1, &VBO);
+    if (VAO) glDeleteVertexArrays(1, &VAO);
+    if (IBO) glDeleteBuffers(1, &IBO);
+    if (instanceVBO) glDeleteBuffers(1, &instanceVBO);
 
-    VBO = VAO = IBO = 0;
+    // Unbind buffers
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    VBO = VAO = IBO = instanceVBO = 0;
 }
 
-void Shape::loadToGPU() {    
-    // Generate and bind Vertex Array Object (VAO)
+// Load shape and generate buffers
+void Shape::loadShapeToGPU() {    
+    // Generate and bind Vertex Array Object (VAO) and instanceVBO
 	glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
+    glGenBuffers(1, &instanceVBO);    
     // Generate and bind Vertex Buffer Object (VBO)
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -60,20 +59,55 @@ void Shape::loadToGPU() {
 	}
 
     // Generate and bind Index Buffer Object (IBO)
-    glGenBuffers(1, &IBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), indices.data(), GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
+    if (!indices.empty()) {
+        glGenBuffers(1, &IBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), indices.data(), GL_STATIC_DRAW);
+    }
+    
+    // Unbind buffers
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Shape::drawInstances(GLuint numInstances) {
-    // Draw shape
+void Shape::drawSingle() {
     if (!indices.empty()) {
-        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0, numInstances);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, indices.data());
     } else {
-        glDrawArraysInstanced(GL_TRIANGLES, 0, vertices.size(), numInstances);
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
     }
+}
+
+void Shape::drawInstancesAtlas(std::vector<InstanceData>& instances) {
+
+}
+
+void Shape::drawInstancesArray(std::vector<InstanceData>& instances) {
+    // Bind the instance buffer and upload instance data
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(InstanceData), instances.data(), GL_STATIC_DRAW);
+
+    // Enable the texture index as an instance attribute
+    glEnableVertexAttribArray(3); 
+    glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(InstanceData), (void*)offsetof(InstanceData, textureIndex));
+    glVertexAttribDivisor(3, 1); // Update per instance
+
+    // Upload the transforms
+    for (int i = 0; i < 4; i++) {
+        glEnableVertexAttribArray(4 + i);  // Instance transform (one for each column of the matrix)
+        glVertexAttribPointer(4 + i, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(offsetof(InstanceData, matWorld) + sizeof(float) * i * 4));
+        glVertexAttribDivisor(4 + i, 1);  // Tell OpenGL this attribute should be updated per instance
+    }
+
+    // Draw instances
+    if (!indices.empty()) {
+        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, indices.data(), instances.size());
+    } else {
+        glDrawArraysInstanced(GL_TRIANGLES, 0, vertices.size(), instances.size());
+    }
+
+    // Unbind buffer
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 // Loads a an object file to the shader. Loads by indices by default
@@ -85,7 +119,7 @@ void Shape::loadFromOBJFile(std::string filename, bool loadByIndices) {
 	else
 		loadByVertexArray(filename);
     
-    loadToGPU();
+    loadShapeToGPU();
 }
 
 void Shape::loadByIndexArray(std::string filename) {
