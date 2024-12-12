@@ -8,7 +8,8 @@
 
 class InputSystem : public ISystem {
 private:
-    uint32_t setRequiredComponents = INPUT_MASK;
+    uint32_t requiredComponents = 0;
+    
     SDL_Window* window;
     std::shared_ptr<Camera> camera;
     ComponentManager& componentManager = ComponentManager::getInstance();

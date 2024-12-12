@@ -7,10 +7,11 @@ layout (location = 2) in vec3 normal;
 
 out vec2 TexCoord;
 
-uniform mat4 matFullTransform;
+uniform mat4 matWorld;
+uniform mat4 matCamera;
 
 void main() {
-    gl_Position = matFullTransform * vec4(position, 1.0);
+    gl_Position = matCamera * matWorld * vec4(position, 1.0);
     TexCoord = texCoord;
 }
 

@@ -6,7 +6,7 @@
 
 class PhysicsSystem : public ISystem {
 private:
-    uint32_t setRequiredComponents = TRANSFORM_MASK | PHYSICS_MASK | COLLIDER_MASK;
+    uint32_t requiredComponents = TRANSFORM_MASK | PHYSICS_MASK;
 
 public:
     PhysicsSystem() {}

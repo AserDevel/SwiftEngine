@@ -9,7 +9,7 @@ void InputSystem::processEvent(const Event& event, float deltaTime) {
         key = event.castData<SDL_Scancode>();
         keyStates[key] = true;
         if (key == SDL_SCANCODE_ESCAPE) {
-            SDL_ShowCursor(SDL_ENABLE);
+            EventManager::getInstance().publish({EVENT_QUIT});
         }
         break;
     case EVENT_KEYUP:
@@ -30,23 +30,19 @@ void InputSystem::update(float deltaTime) {
 
 void InputSystem::processKeyStates(float deltaTime) {
     const Uint8* state = SDL_GetKeyboardState(NULL);
-
-    if (state[SDL_SCANCODE_W]) {
-        camera->processKeyboardInput("FORWARD", deltaTime, 5.0f);
-    }
-    if (state[SDL_SCANCODE_S]) {
-        camera->processKeyboardInput("BACKWARD", deltaTime, 5.0f);
-    }
-    if (state[SDL_SCANCODE_A]) {
-        camera->processKeyboardInput("LEFT", deltaTime, 5.0f);
-    }
-    if (state[SDL_SCANCODE_D]) {
-        camera->processKeyboardInput("RIGHT", deltaTime, 5.0f);
-    }
-    if (state[SDL_SCANCODE_SPACE]) {
-        camera->processKeyboardInput("UP", deltaTime, 5.0f);
-    }
-    if (state[SDL_SCANCODE_LSHIFT]) {
-        camera->processKeyboardInput("DOWN", deltaTime, 5.0f);
-    }
+    float speed = 5.0f;
+    if (state[SDL_SCANCODE_LCTRL])
+        speed *= 2;
+    if (state[SDL_SCANCODE_W]) 
+        camera->processKeyboardInput("FORWARD", deltaTime, speed);
+    if (state[SDL_SCANCODE_S]) 
+        camera->processKeyboardInput("BACKWARD", deltaTime, speed);
+    if (state[SDL_SCANCODE_A]) 
+        camera->processKeyboardInput("LEFT", deltaTime, speed);
+    if (state[SDL_SCANCODE_D]) 
+        camera->processKeyboardInput("RIGHT", deltaTime, speed);
+    if (state[SDL_SCANCODE_SPACE]) 
+        camera->processKeyboardInput("UP", deltaTime, speed);
+    if (state[SDL_SCANCODE_LSHIFT])
+        camera->processKeyboardInput("DOWN", deltaTime, speed);
 }

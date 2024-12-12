@@ -59,6 +59,8 @@ bool initializeWindow(SDL_Window** window, SDL_GLContext* context) {
     }
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     return true;
 }
@@ -75,6 +77,7 @@ int main(int argc, char* argv[]) {
     }    
 
     SDL_ShowCursor(SDL_DISABLE);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
 
     std::shared_ptr camera = std::make_shared<Camera>(
         Vec3(0.0f, 0.0f, 0.0f),  // Position
@@ -95,16 +98,52 @@ int main(int argc, char* argv[]) {
 
     // Load data to openGL
     std::shared_ptr<Shape> cube = RM.getShape("lib/objects/cube.obj", true);
-    std::shared_ptr<Texture> stone = RM.getTexture("lib/textures/stone.png");
-    std::shared_ptr<Texture> dirt = RM.getTexture("lib/textures/dirt.png");
-    std::shared_ptr<Texture> cobblestone = RM.getTexture("lib/textures/cobblestone.png");
+    std::shared_ptr<Texture> dirtTex = RM.getTexture("lib/textures/dirt.png");
+    std::shared_ptr<Texture> cobblestoneTex = RM.getTexture("lib/textures/cobblestone.png");
+    std::shared_ptr<Texture> stoneTex = RM.getTexture("lib/textures/stone.png");
 
-    auto entity = EM.createEntity();
-    Renderable cobble = { cube, cobblestone };
-    Transform transform = { { 0,0,-2 } };
-    CM.addComponent(entity, cobble);
-    CM.addComponent(entity, transform);
+
+    Renderable cobble = { cube, cobblestoneTex, 0.4, 8};
+    Renderable stone = { cube, stoneTex, 1, 32 };
+    Entity entity;
+    Transform transform;
+
+    for (int i = 0; i < 10; i++) {
+        for (int j = -10; j < 10; j++) {
+            entity = EM.createEntity();
+            transform.position =  {i,-2,j};
+            CM.addComponent<Renderable>(entity, cobble);
+            CM.addComponent<Transform>(entity, transform);
+        }   
+    }
+
+    for (int i = -10; i < 0; i++) {
+        for (int j = -10; j < 10; j++) {
+            entity = EM.createEntity();
+            transform.position =  {i,-2,j};
+            CM.addComponent<Renderable>(entity, stone);
+            CM.addComponent<Transform>(entity, transform);
+        }   
+    }
+
+    entity = EM.createEntity();
+    transform.position = {5, 3, 0};
+    transform.direction = {0, 1, 0};
+    CM.addComponent<Renderable>(entity, cobble);
+    CM.addComponent<Transform>(entity, transform);
     
+    entity = EM.createEntity(); // White point light
+    LightSource light = {{1,1,1}, {3,3,3}, 1.0f, 1.0f, 0.07f, 0.035f };
+    CM.addComponent<LightSource>(entity, light);
+
+    entity = EM.createEntity(); // red point light
+    light.color = {1,0,0}; light.position = {-3, 3, -3};
+    CM.addComponent<LightSource>(entity, light);
+
+    entity = EM.createEntity(); // the sun
+    light.color = { 0,0,1 }; light.position = { 5, 3, -5 };
+    CM.addComponent<LightSource>(entity, light);
+
     float lastFrameTime = SDL_GetTicks() / 1000.0f;
     GameState currentState = NONE;
     while (currentState != QUIT) {

@@ -11,6 +11,8 @@
 #include "EntityManager.h"
 #include "components.h"
 
+using Entity = uint32_t;
+
 // Abstract base class for component arrays
 class IComponentArray {
 public:
@@ -46,12 +48,6 @@ public:
             throw std::runtime_error("Trying to access a non-existent component!");
         }
         return components[entity];
-    }
-
-    void forEach(std::function<void(Entity, T&)> callback) {
-        for (auto& [entity, component] : components) {
-            callback(entity, component);
-        }
     }
 
     void entityDestroyed(Entity entity) override {
@@ -98,12 +94,6 @@ public:
     T& getComponent(Entity entity) {
         auto& array = getComponentArray<T>();
         return array.get(entity);
-    }
-
-    // Iterate over all components of type T
-    template <typename T>
-    void forEach(std::function<void(Entity, T&)> callback) {
-        getComponentArray<T>().forEach(callback);
     }
 
     // Handle entity destruction by notifying all component arrays

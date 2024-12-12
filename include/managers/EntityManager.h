@@ -4,38 +4,19 @@
 #include <queue>
 #include <unordered_set>
 #include <inttypes.h>
+#include <unordered_map>
+#include "components.h"
 
-struct Entity {
-    uint32_t id; // version (bits 0-15) index (bits 16-31)
-    uint32_t componentMask = 0;
-
-    // Define equality comparison operator
-    bool operator==(const Entity& other) const {
-        return id == other.id;  // Compare the ids for equality
-    }
-
-    // Define inequality comparison operator
-    bool operator!=(const Entity& other) const {
-        return !(*this == other);  // Return the opposite of equality comparison
-    }
-};
-
-// Custom hash function for Entity to use in unordered_set
-namespace std {
-    template <>
-    struct hash<Entity> {
-        std::size_t operator()(const Entity& entity) const {
-            return std::hash<uint32_t>{}(entity.id);
-        }
-    };
-}
+using Entity = uint32_t;
 
 class EntityManager {
     EntityManager() {}
 
     std::queue<Entity> availableIDs; // Reuse IDs when entities are destroyed
     std::unordered_set<Entity> activeEntities; // Track all active entities
-    Entity nextEntity = { 0,0 };
+    Entity nextEntity = 0;
+
+    std::unordered_map<Entity, uint32_t> entityMasks;
 
 public:
     static EntityManager& getInstance() {
@@ -48,12 +29,16 @@ public:
     EntityManager& operator=(const EntityManager&) = delete;
 
     Entity createEntity();
+
     void destroyEntity(Entity entity);
+
     bool isEntityAlive(Entity entity);
 
     void removeComponentMask(Entity entity, uint32_t mask);
+    
     void addComponentMask(Entity entity, uint32_t mask);
-};
 
+    std::vector<Entity> getEntitiesByMask(uint32_t mask);
+};
 
 #endif

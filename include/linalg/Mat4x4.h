@@ -34,7 +34,7 @@ Mat4x4 MatrixTranslation(float x, float y, float z);
 
 Mat4x4 MatrixScaling(float sx, float sy, float sz);
 
-Mat4x4 MatrixWorld(Vec3 pos, Vec3 scale, Vec3 dir);
+Mat4x4 MatrixWorld(Vec3 pos, Vec3 dir, Vec3 scale);
 
 Mat4x4 MatrixLookAt(Vec3& eye, Vec3& target, Vec3& up);
 

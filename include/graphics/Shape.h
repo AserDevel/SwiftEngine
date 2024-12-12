@@ -16,8 +16,10 @@ struct Vertex {
 };
 
 struct InstanceData {
-    GLuint textureIndex; // Maps every instance to its texture
     Mat4x4 matWorld;
+    GLuint textureIndex; // Maps every instance to its texture
+    GLuint shininess;
+    float reflectivity;
 };
 
 class Shape {

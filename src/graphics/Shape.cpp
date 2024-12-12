@@ -33,8 +33,8 @@ void Shape::loadShapeToGPU() {
     // Generate and bind Vertex Array Object (VAO) and instanceVBO
 	glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-
     glGenBuffers(1, &instanceVBO);    
+    
     // Generate and bind Vertex Buffer Object (VBO)
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -91,12 +91,22 @@ void Shape::drawInstancesArray(std::vector<InstanceData>& instances) {
     glEnableVertexAttribArray(3); 
     glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(InstanceData), (void*)offsetof(InstanceData, textureIndex));
     glVertexAttribDivisor(3, 1); // Update per instance
+    
+    // Enable shininess as an instance attribute
+    glEnableVertexAttribArray(4); 
+    glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, sizeof(InstanceData), (void*)offsetof(InstanceData, shininess));
+    glVertexAttribDivisor(4, 1); 
+
+    // Enable reflectivity as an instance attribute
+    glEnableVertexAttribArray(5); 
+    glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)offsetof(InstanceData, reflectivity));
+    glVertexAttribDivisor(5, 1); 
 
     // Upload the transforms
     for (int i = 0; i < 4; i++) {
-        glEnableVertexAttribArray(4 + i);  // Instance transform (one for each column of the matrix)
-        glVertexAttribPointer(4 + i, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(offsetof(InstanceData, matWorld) + sizeof(float) * i * 4));
-        glVertexAttribDivisor(4 + i, 1);  // Tell OpenGL this attribute should be updated per instance
+        glEnableVertexAttribArray(6 + i);  // Instance transform (one for each column of the matrix)
+        glVertexAttribPointer(6 + i, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(offsetof(InstanceData, matWorld) + sizeof(float) * i * 4));
+        glVertexAttribDivisor(6 + i, 1);  // Tell OpenGL this attribute should be updated per instance
     }
 
     // Draw instances

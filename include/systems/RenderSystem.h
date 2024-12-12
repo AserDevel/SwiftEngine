@@ -11,7 +11,7 @@
 
 class RenderSystem : public ISystem {
 private:
-    uint32_t setRequiredComponents = RENDERABLE_MASK | TRANSFORM_MASK;
+    uint32_t requiredComponents = RENDERABLE_MASK | TRANSFORM_MASK;
     
     SDL_Window* window;
     std::shared_ptr<Camera> camera;
@@ -32,20 +32,17 @@ public:
     void update(float deltaTime) override;
 
 private:
-    // Filter all entities with required components
-    void filterEntities();
-
     // Distribute entities across different shaders and render them
     void renderEntities();
+
+    // Gets the 'amount' most meaningful light sources
+    std::vector<LightSource> getLightSources(size_t amount);
 
     // Render multiple instances of the same shape, using a texture array
     void renderInstancesArray(std::vector<Entity> entities);
 
     // Render multiple instances of the same shape, using a texture atlas
     void renderInstancesAtlas(std::vector<Entity> entities);
-
-    // Render a single instance
-    void renderSingle(Entity entity);
 };
 
 

@@ -17,10 +17,14 @@ Mat4x4 Camera::getMatCamera() {
 
 void Camera::processKeyboardInput(const std::string& direction, float deltaTime, float speed) {
     float velocity = speed * deltaTime;
-    if (direction == "FORWARD")
-        position -= (front * velocity);
-    if (direction == "BACKWARD")
-        position += (front * velocity);
+    if (direction == "FORWARD") {
+        position.x -= (cosf(yaw) * velocity);
+        position.z -= (sinf(yaw) * velocity);
+    }   
+    if (direction == "BACKWARD") {
+        position.x += (cosf(yaw) * velocity);
+        position.z += (sinf(yaw) * velocity);
+    }
     if (direction == "LEFT")
         position -= (right * velocity);
     if (direction == "RIGHT")

@@ -4,9 +4,37 @@
 #include <sstream>
 #include <unordered_map>
 #include "graphics/Shader.h"
+#include "managers/components.h"
 
 void Shader::use() {
     glUseProgram(programID);
+}
+
+void Shader::bindFloat(float f, const char* name) {
+    GLuint uniformLocation = glGetUniformLocation(programID, name);
+	if (uniformLocation == -1) {
+		std::cerr << "Uniform '" << name << "' not found in shader program" << std::endl;
+	} else {
+		glUniform1f(uniformLocation, f);
+		GLenum error = glGetError();
+		if (error != GL_NO_ERROR) {
+            std::cerr << "Error while setting uniform '" << name << "': " << glGetError() << std::endl;
+        }
+	}
+}
+
+void Shader::bindVector(Vec3 vector, const char* name) {
+    GLuint uniformLocation = glGetUniformLocation(programID, name);
+	if (uniformLocation == -1) {
+		std::cerr << "Uniform '" << name << "' not found in shader program" << std::endl;
+	} else {
+		glUniform3f(uniformLocation, vector.x, vector.y, vector.z);
+		GLenum error = glGetError();
+		if (error != GL_NO_ERROR) {
+            std::cerr << "Error while setting uniform '" << name << "': " << glGetError() << std::endl;
+        }
+	}
+
 }
 
 void Shader::bindMatrix(Mat4x4 matrix, const char* name) {
@@ -19,6 +47,26 @@ void Shader::bindMatrix(Mat4x4 matrix, const char* name) {
 		if (error != GL_NO_ERROR) {
             std::cerr << "Error while setting uniform '" << name << "': " << glGetError() << std::endl;
         }
+	}
+}
+
+void Shader::bindLights(std::vector<LightSource> lights) {
+    glUniform1i(glGetUniformLocation(programID, "numLights"), lights.size());
+    for (size_t i = 0; i < lights.size(); ++i) {
+        std::string lightBase = "lights[" + std::to_string(i) + "]";
+
+        glUniform3fv(glGetUniformLocation(programID, (lightBase + ".position").c_str()), 1, &lights[i].position.x);
+        glUniform3fv(glGetUniformLocation(programID, (lightBase + ".color").c_str()), 1, &lights[i].color.x);
+        glUniform1f(glGetUniformLocation(programID, (lightBase + ".intensity").c_str()), lights[i].intensity);
+
+        glUniform1f(glGetUniformLocation(programID, (lightBase + ".constant").c_str()), lights[i].constant);
+        glUniform1f(glGetUniformLocation(programID, (lightBase + ".linear").c_str()), lights[i].linear);
+        glUniform1f(glGetUniformLocation(programID, (lightBase + ".quadratic").c_str()), lights[i].quadratic);
+    }
+
+    GLenum error = glGetError();
+	if (error != GL_NO_ERROR) {
+		std::cerr << "Error while setting uniform lights: " << error << "\n";
 	}
 }
 

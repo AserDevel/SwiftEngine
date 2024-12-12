@@ -10,11 +10,11 @@ Entity EntityManager::createEntity() {
         availableIDs.pop();
         // Increment version for reuse to avoid conflicts
         // Reset the lower 16 bits for version and set the new version
-        entity.id = (entity.id & 0xFFFF0000) | ((entity.id + 1) & 0xFFFF); // Increment the version while keeping the index
+        entity = (entity & 0xFFFF0000) | ((entity + 1) & 0xFFFF); // Increment the version while keeping the index
     } else {
         // Assign a new entity ID
-        entity.id = (nextEntity.id << 16); // Set index part to nextEntity.id, and version to 0
-        nextEntity.id++; // Increment index for the next entity
+        entity = (nextEntity << 16); // Set index part to nextEntity.id, and version to 0
+        nextEntity++; // Increment index for the next entity
     }
     
     activeEntities.insert(entity);
@@ -23,8 +23,6 @@ Entity EntityManager::createEntity() {
 
 
 void EntityManager::destroyEntity(Entity entity) {
-    // Reset componentMask
-    entity.componentMask = 0;
     // Add the entity to the available IDs queue
     availableIDs.push(entity);
     // Remove from active entities
@@ -37,10 +35,21 @@ bool EntityManager::isEntityAlive(Entity entity) {
     return activeEntities.find(entity) != activeEntities.end();
 }
 
-void EntityManager::removeComponentMask(Entity entity, uint32_t mask) {
-    entity.componentMask = entity.componentMask & ~mask;
+void EntityManager::addComponentMask(Entity entity, uint32_t mask) {
+    entityMasks[entity] |= mask;
 }
 
-void EntityManager::addComponentMask(Entity entity, uint32_t mask) {
-    entity.componentMask = entity.componentMask | mask;
+void EntityManager::removeComponentMask(Entity entity, uint32_t mask) {
+    entityMasks[entity] &= ~mask;
+}
+
+// Query entities that match a specific bitmask
+std::vector<Entity> EntityManager::getEntitiesByMask(uint32_t mask) {
+    std::vector<Entity> result;
+    for (const auto& [entity, entityMask] : entityMasks) {
+        if ((entityMask & mask) == mask) { // Check if the mask matches the entity's components
+            result.push_back(entity);
+        }
+    }
+    return result;
 }

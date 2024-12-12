@@ -121,12 +121,12 @@ Mat4x4 MatrixScaling(float sx, float sy, float sz) {
     return matrix;
 }
 
-Mat4x4 MatrixWorld(Vec3 pos, Vec3 scale, Vec3 dir) {
+Mat4x4 MatrixWorld(Vec3 pos, Vec3 dir, Vec3 scale) {
     Mat4x4 matWorld(1);
     matWorld = MatrixTranslation(pos.x, pos.y, pos.z) * 
             MatrixScaling(scale.x, scale.y, scale.z) * 
             MatrixRotation(dir.x, dir.y, dir.z);
-            
+
     return matWorld;
 } 
 
