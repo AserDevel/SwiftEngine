@@ -8,6 +8,13 @@ class PhysicsSystem : public ISystem {
 private:
     uint32_t requiredComponents = TRANSFORM_MASK | PHYSICS_MASK;
 
+    ComponentManager& componentManager = ComponentManager::getInstance();
+    EntityManager& entityManager = EntityManager::getInstance();
+
+    std::vector<Entity> entities;
+
+    float gravity = 9.816;
+
 public:
     PhysicsSystem() {}
 

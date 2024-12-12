@@ -107,6 +107,7 @@ int main(int argc, char* argv[]) {
     Renderable stone = { cube, stoneTex, 1, 32 };
     Entity entity;
     Transform transform;
+    Physics physics;
 
     for (int i = 0; i < 10; i++) {
         for (int j = -10; j < 10; j++) {
@@ -127,10 +128,11 @@ int main(int argc, char* argv[]) {
     }
 
     entity = EM.createEntity();
-    transform.position = {5, 3, 0};
+    transform.position = {5, 10, 0};
     transform.direction = {0, 1, 0};
     CM.addComponent<Renderable>(entity, cobble);
     CM.addComponent<Transform>(entity, transform);
+    CM.addComponent<Physics>(entity, physics);
     
     entity = EM.createEntity(); // White point light
     LightSource light = {{1,1,1}, {3,3,3}, 1.0f, 1.0f, 0.07f, 0.035f };
@@ -161,7 +163,7 @@ int main(int argc, char* argv[]) {
             case INGAME:
                 SM.registerSystem<InputSystem>(window, camera);
                 SM.registerSystem<RenderSystem>(window, camera);
-                //SM.registerSystem<PhysicsSystem>();
+                SM.registerSystem<PhysicsSystem>();
                 break;
             case MAINMENU:
                 SM.registerSystem<InputSystem>(window, camera);

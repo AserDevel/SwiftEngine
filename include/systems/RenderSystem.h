@@ -18,6 +18,7 @@ private:
     
     ComponentManager& componentManager = ComponentManager::getInstance();
     ResourceManager& resourceManager = ResourceManager::getInstance();
+    EntityManager& entityManager = EntityManager::getInstance();
     
     std::vector<Entity> entities;
 

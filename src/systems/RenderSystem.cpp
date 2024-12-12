@@ -13,7 +13,7 @@ void RenderSystem::update(float deltaTime) {
     glDepthRange(0.1f, 10.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    entities = EntityManager::getInstance().getEntitiesByMask(requiredComponents);
+    entities = entityManager.getEntitiesByMask(requiredComponents);
     renderEntities();
 
     // Swap buffers
@@ -37,11 +37,11 @@ void RenderSystem::renderEntities() {
 
 std::vector<LightSource> RenderSystem::getLightSources(size_t amount) {
     // get all lights and sort them by distance to camera.
-    auto entities = EntityManager::getInstance().getEntitiesByMask(LIGHT_SOURCE_MASK);
+    auto entities = entityManager.getEntitiesByMask(LIGHT_SOURCE_MASK);
     auto compare = [&](Entity a, Entity b) -> bool {
         LightSource la = componentManager.getComponent<LightSource>(a);
         LightSource lb = componentManager.getComponent<LightSource>(b);
-        return ((camera->position - la.position).length() > (camera->position - lb.position).length());
+        return (length(camera->position - la.position) > length(camera->position - lb.position));
     };
     
     // Insertion sort
