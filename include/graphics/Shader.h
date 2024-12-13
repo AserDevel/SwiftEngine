@@ -8,7 +8,16 @@
 #include <string.h>
 #include <vector>
 
-struct LightSource;
+struct LightData {
+    Vec3 position;
+    Vec3 color;
+    float intensity;
+
+    // Attenuation factors
+    float constant = 1;
+    float linear;
+    float quadratic;
+};
 
 class Shader {
     GLuint programID;
@@ -41,7 +50,7 @@ public:
 
     void bindFloat(float f, const char* name);
 
-    void bindLights(std::vector<LightSource> lights);
+    void bindLights(std::vector<LightData> lights);
 };
 
 #endif

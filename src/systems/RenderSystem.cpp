@@ -1,5 +1,6 @@
 #include "systems/RenderSystem.h"
 #include <algorithm>
+#include "glad/glad.h"
 
 const float globalAmbience = 0.1f;
 
@@ -13,7 +14,7 @@ void RenderSystem::update(float deltaTime) {
     glDepthRange(0.1f, 10.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    entities = entityManager.getEntitiesByMask(requiredComponents);
+    entities = registry.getEntitiesWith(requiredComponents);
     renderEntities();
 
     // Swap buffers
@@ -27,21 +28,22 @@ void RenderSystem::renderEntities() {
     // Map entities to shapes
     std::unordered_map<std::shared_ptr<Shape>, std::vector<Entity>> shapeMap;
     for (auto& entity : entities) {
-        auto& renderable = componentManager.getComponent<Renderable>(entity);
-        shapeMap[renderable.shape].push_back(entity);
+        auto& material = registry.getComponent<Material>(entity);
+        shapeMap[material.shape].push_back(entity);
     }
     for (auto& [shape, entities] : shapeMap) {
         renderInstancesArray(entities);
     }
 }
 
-std::vector<LightSource> RenderSystem::getLightSources(size_t amount) {
+
+std::vector<LightData> RenderSystem::getLightSources(size_t amount) {
     // get all lights and sort them by distance to camera.
-    auto entities = entityManager.getEntitiesByMask(LIGHT_SOURCE_MASK);
+    auto entities = registry.getEntitiesWith(LIGHT_SOURCE_MASK | TRANSFORM_MASK);
     auto compare = [&](Entity a, Entity b) -> bool {
-        LightSource la = componentManager.getComponent<LightSource>(a);
-        LightSource lb = componentManager.getComponent<LightSource>(b);
-        return (length(camera->position - la.position) > length(camera->position - lb.position));
+        Transform ta = registry.getComponent<Transform>(a);
+        Transform tb = registry.getComponent<Transform>(b);
+        return (length(camera->position - ta.position) > length(camera->position - tb.position));
     };
     
     // Insertion sort
@@ -57,10 +59,13 @@ std::vector<LightSource> RenderSystem::getLightSources(size_t amount) {
     }
 
     // return the 'amount' first aka closest lights to the camera
-    std::vector<LightSource> lights;
+    std::vector<LightData> lights;
     amount = std::min(amount, entities.size());
     for (size_t i = 0; i < amount; i++) {
-        lights.push_back(componentManager.getComponent<LightSource>(entities[i]));
+        LightSource light = registry.getComponent<LightSource>(entities[i]);
+        Vec3 position = registry.getComponent<Transform>(entities[i]).position;
+        LightData data = {position, light.color, light.intensity, light.constant, light.linear, light.quadratic};
+        lights.push_back(data);
     }
     return lights;
 }
@@ -71,17 +76,17 @@ void RenderSystem::renderInstancesArray(std::vector<Entity> entities) {
     std::vector<InstanceData> instances;
     TextureArray textures;
     for (auto& entity : entities) {
-        auto& renderable = componentManager.getComponent<Renderable>(entity);
-        auto& transform = componentManager.getComponent<Transform>(entity);
+        auto& material = registry.getComponent<Material>(entity);
+        auto& transform = registry.getComponent<Transform>(entity);
         
         InstanceData newInstance;
-        newInstance.matWorld = MatrixWorld(transform.position, transform.direction, transform.scale);
-        newInstance.reflectivity = renderable.reflectivity;
-        newInstance.shininess = renderable.shininess;
+        newInstance.matWorld = MatrixWorld(transform.position, transform.rotation, transform.scale);
+        newInstance.reflectivity = material.reflectivity;
+        newInstance.shininess = material.shininess;
 
         bool newTexture = true;
         for (int i = 0; i < textures.array.size(); i++) {
-            if (renderable.texture == textures.array[i]) {
+            if (material.texture == textures.array[i]) {
                 newInstance.textureIndex = i;
                 newTexture = false;
             }
@@ -89,12 +94,12 @@ void RenderSystem::renderInstancesArray(std::vector<Entity> entities) {
 
         if (newTexture) {
             newInstance.textureIndex = textures.array.size();
-            textures.array.push_back(renderable.texture);
+            textures.array.push_back(material.texture);
         }
         instances.push_back(newInstance);
     }
 
-    auto& shape = componentManager.getComponent<Renderable>(entities[0]).shape;
+    auto& shape = registry.getComponent<Material>(entities[0]).shape;
 
     // Use the appropiate shader
     auto shader = resourceManager.getShader("lib/shaders/textureArray.glsl");
@@ -111,7 +116,7 @@ void RenderSystem::renderInstancesArray(std::vector<Entity> entities) {
     shader->bindMatrix(camera->getMatCamera(), "matCamera");
     shader->bindFloat(globalAmbience, "globalAmbience");
     shader->bindVector(camera->position, "eyePos");
-    shader->bindLights(getLightSources(8));
+    shader->bindLights(getLightSources(8)); // bind 8 closest light sources to shader
 
     // Draw instances
     shape->drawInstancesArray(instances); 

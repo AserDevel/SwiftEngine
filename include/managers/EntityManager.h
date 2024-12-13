@@ -10,8 +10,6 @@
 using Entity = uint32_t;
 
 class EntityManager {
-    EntityManager() {}
-
     std::queue<Entity> availableIDs; // Reuse IDs when entities are destroyed
     std::unordered_set<Entity> activeEntities; // Track all active entities
     Entity nextEntity = 0;
@@ -19,20 +17,16 @@ class EntityManager {
     std::unordered_map<Entity, uint32_t> entityMasks;
 
 public:
-    static EntityManager& getInstance() {
-        static EntityManager instance;
-        return instance;
-    }
 
-    // Delete copy constructor and assignment operator
-    EntityManager(const EntityManager&) = delete;
-    EntityManager& operator=(const EntityManager&) = delete;
+    EntityManager() {}
 
     Entity createEntity();
 
     void destroyEntity(Entity entity);
 
     bool isEntityAlive(Entity entity);
+
+    bool match(Entity entity, u_int32_t mask);
 
     void removeComponentMask(Entity entity, uint32_t mask);
     

@@ -9,8 +9,8 @@
 #include "linalg/linalg.h"
 #include "graphics/Camera.h"
 #include "managers/SystemManager.h"
-#include "managers/ComponentManager.h"
 #include "managers/ResourceManager.h"
+#include "managers/Registry.h"
 
 // Window dimensions
 int WINDOW_SIZE = 600;
@@ -60,7 +60,7 @@ bool initializeWindow(SDL_Window** window, SDL_GLContext* context) {
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CW);
+
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     return true;
 }
@@ -91,8 +91,7 @@ int main(int argc, char* argv[]) {
     );
     
     // init managers
-    auto& EM = EntityManager::getInstance();
-    auto& CM = ComponentManager::getInstance();
+    Registry& registry = Registry::getInstance();
     auto& RM = ResourceManager::getInstance();
     auto& SM = SystemManager::getInstance();
 
@@ -103,48 +102,55 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<Texture> stoneTex = RM.getTexture("lib/textures/stone.png");
 
 
-    Renderable cobble = { cube, cobblestoneTex, 0.4, 8};
-    Renderable stone = { cube, stoneTex, 1, 32 };
+    Material cobble = { cube, cobblestoneTex, 0.4, 8};
+    Material stone = { cube, stoneTex, 1, 32 };
     Entity entity;
     Transform transform;
-    Physics physics;
+    Physics physics(Vec3(0,0,0), Vec3(1,-9.812,1));
 
     for (int i = 0; i < 10; i++) {
         for (int j = -10; j < 10; j++) {
-            entity = EM.createEntity();
-            transform.position =  {i,-2,j};
-            CM.addComponent<Renderable>(entity, cobble);
-            CM.addComponent<Transform>(entity, transform);
+            entity = registry.createEntity();
+            transform.position =  {i,0,j};
+            registry.addComponent<Material>(entity, cobble);
+            registry.addComponent<Transform>(entity, transform);
         }   
     }
 
     for (int i = -10; i < 0; i++) {
         for (int j = -10; j < 10; j++) {
-            entity = EM.createEntity();
-            transform.position =  {i,-2,j};
-            CM.addComponent<Renderable>(entity, stone);
-            CM.addComponent<Transform>(entity, transform);
+            entity = registry.createEntity();
+            transform.position =  {i,0,j};
+            registry.addComponent<Material>(entity, stone);
+            registry.addComponent<Transform>(entity, transform);
         }   
     }
 
-    entity = EM.createEntity();
-    transform.position = {5, 10, 0};
-    transform.direction = {0, 1, 0};
-    CM.addComponent<Renderable>(entity, cobble);
-    CM.addComponent<Transform>(entity, transform);
-    CM.addComponent<Physics>(entity, physics);
+    entity = registry.createEntity();
+    transform.position = {-5, 10, 0};
+    transform.rotation = {0, 0, 0};
+    registry.addComponent<Material>(entity, cobble);
+    registry.addComponent<Transform>(entity, transform);
+    registry.addComponent<Physics>(entity, physics);
     
-    entity = EM.createEntity(); // White point light
-    LightSource light = {{1,1,1}, {3,3,3}, 1.0f, 1.0f, 0.07f, 0.035f };
-    CM.addComponent<LightSource>(entity, light);
+    // lights
+    entity = registry.createEntity(); 
+    LightSource light = {{1,1,1}, 1.0f, 1.0f, 0.07f, 0.035f};
+    transform.position = { 3,3,3 };
+    registry.addComponent<LightSource>(entity, light);
+    registry.addComponent<Transform>(entity, transform);
 
-    entity = EM.createEntity(); // red point light
-    light.color = {1,0,0}; light.position = {-3, 3, -3};
-    CM.addComponent<LightSource>(entity, light);
+    entity = registry.createEntity(); 
+    light.color = {1,0,0};
+    transform.position = { -3,3,-3 };
+    registry.addComponent<LightSource>(entity, light);
+    registry.addComponent<Transform>(entity, transform);
 
-    entity = EM.createEntity(); // the sun
-    light.color = { 0,0,1 }; light.position = { 5, 3, -5 };
-    CM.addComponent<LightSource>(entity, light);
+    entity = registry.createEntity();
+    light.color = { 0,0,1 };
+    transform.position = { 0,10,0 };
+    registry.addComponent<LightSource>(entity, light);
+    registry.addComponent<Transform>(entity, transform);
 
     float lastFrameTime = SDL_GetTicks() / 1000.0f;
     GameState currentState = NONE;

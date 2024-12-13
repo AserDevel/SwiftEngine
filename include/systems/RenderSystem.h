@@ -5,20 +5,19 @@
 #include "graphics/Camera.h"
 #include "ISystem.h"
 #include "managers/ResourceManager.h"
-#include "managers/ComponentManager.h"
+#include "managers/Registry.h"
 #include "managers/EventManager.h"
 
 
 class RenderSystem : public ISystem {
 private:
-    uint32_t requiredComponents = RENDERABLE_MASK | TRANSFORM_MASK;
+    uint32_t requiredComponents = MATERIAL_MASK | TRANSFORM_MASK;
     
     SDL_Window* window;
     std::shared_ptr<Camera> camera;
     
-    ComponentManager& componentManager = ComponentManager::getInstance();
+    Registry& registry = Registry::getInstance();
     ResourceManager& resourceManager = ResourceManager::getInstance();
-    EntityManager& entityManager = EntityManager::getInstance();
     
     std::vector<Entity> entities;
 
@@ -37,7 +36,7 @@ private:
     void renderEntities();
 
     // Gets the 'amount' most meaningful light sources
-    std::vector<LightSource> getLightSources(size_t amount);
+    std::vector<LightData> getLightSources(size_t amount);
 
     // Render multiple instances of the same shape, using a texture array
     void renderInstancesArray(std::vector<Entity> entities);

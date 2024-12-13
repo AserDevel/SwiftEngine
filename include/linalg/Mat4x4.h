@@ -6,6 +6,7 @@
 #include "Vec2.h"
 #include "Vec3.h"
 #include "Vec4.h"
+#include "Quat.h"
 #include <array>
 
 struct Mat4x4 {
@@ -106,6 +107,21 @@ inline Mat4x4 MatrixRotation(float pitch, float yaw, float roll) {
     return MatrixRotationX(pitch) * MatrixRotationY(yaw) * MatrixRotationZ(roll);
 }
 
+inline Mat4x4 quatToMatrix(Quat q) {
+    Mat4x4 matrix;
+    matrix[0][0] = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+    matrix[0][1] = 2.0f * (q.x * q.y - q.z * q.w);
+    matrix[0][2] = 2.0f * (q.x * q.z + q.y * q.w);
+    matrix[1][0] = 2.0f * (q.x * q.y + q.z * q.w);
+    matrix[1][1] = 1.0f - 2.0f * (q.x * q.x + q.z * q.z);
+    matrix[1][2] = 2.0f * (q.y * q.z - q.x * q.w);
+    matrix[2][0] = 2.0f * (q.x * q.z - q.y * q.w);
+    matrix[2][1] = 2.0f * (q.y * q.z + q.x * q.w);
+    matrix[2][2] = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
+    matrix[3][3] = 1.0f;
+    return matrix;
+}
+
 inline Mat4x4 MatrixProjection(float fFovDegrees, float fAspectRatio, float fNear, float fFar) {
     float fFovRad = 1.0f / tanf(fFovDegrees * 0.5f / 180.0f * 3.14159f);
     Mat4x4 matrix(1);
@@ -118,33 +134,28 @@ inline Mat4x4 MatrixProjection(float fFovDegrees, float fAspectRatio, float fNea
     return matrix;
 }
 
-inline Mat4x4 MatrixTranslation(float x, float y, float z) {
+inline Mat4x4 MatrixTranslation(const Vec3& pos) {
     Mat4x4 matrix(1);
     matrix[0][0] = 1.0f;
     matrix[1][1] = 1.0f;
     matrix[2][2] = 1.0f;
     matrix[3][3] = 1.0f;
-    matrix[3][0] = x;
-    matrix[3][1] = y;
-    matrix[3][2] = z;
+    matrix[3][0] = pos.x;
+    matrix[3][1] = pos.y;
+    matrix[3][2] = pos.z;
     return matrix;
 }
 
-inline Mat4x4 MatrixScaling(float sx, float sy, float sz) {
+inline Mat4x4 MatrixScaling(const Vec3& scale) {
     Mat4x4 matrix(1);
-    matrix[0][0] = sx; 
-    matrix[1][1] = sy; 
-    matrix[2][2] = sz; 
+    matrix[0][0] = scale.x; 
+    matrix[1][1] = scale.y; 
+    matrix[2][2] = scale.z; 
     return matrix;
 }
 
-inline Mat4x4 MatrixWorld(Vec3 pos, Vec3 rot, Vec3 scale) {
-    Mat4x4 matWorld(1);
-    matWorld = MatrixTranslation(pos.x, pos.y, pos.z) * 
-            MatrixScaling(scale.x, scale.y, scale.z) * 
-            MatrixRotation(rot.x, rot.y, rot.z);
-
-    return matWorld;
+inline Mat4x4 MatrixWorld(const Vec3& pos, const Quat& rot, const Vec3& scale) {
+    return MatrixTranslation(pos) * quatToMatrix(rot) * MatrixScaling(scale);
 } 
 
 inline Mat4x4 MatrixLookAt(Vec3& eye, Vec3& target, Vec3& up) {

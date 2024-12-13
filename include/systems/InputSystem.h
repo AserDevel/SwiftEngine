@@ -1,7 +1,7 @@
 #ifndef INPUTSYSTEM_H
 #define INPUTSYSTEM_H
 
-#include "managers/ComponentManager.h"
+#include "managers/Registry.h"
 #include "managers/ResourceManager.h"
 #include "graphics/Camera.h"
 #include "ISystem.h"
@@ -9,10 +9,11 @@
 class InputSystem : public ISystem {
 private:
     uint32_t requiredComponents = 0;
-    
+
     SDL_Window* window;
     std::shared_ptr<Camera> camera;
-    ComponentManager& componentManager = ComponentManager::getInstance();
+    
+    Registry& registry = Registry::getInstance();
 
     std::unordered_map<SDL_Scancode, bool> keyStates;
 

@@ -1,5 +1,4 @@
 #include "managers/EntityManager.h"
-#include "managers/ComponentManager.h"
 #include <typeindex>
 
 Entity EntityManager::createEntity() {
@@ -27,12 +26,14 @@ void EntityManager::destroyEntity(Entity entity) {
     availableIDs.push(entity);
     // Remove from active entities
     activeEntities.erase(entity);
-    // Delete entity from component manager
-    ComponentManager::getInstance().entityDestroyed(entity);
 }
 
 bool EntityManager::isEntityAlive(Entity entity) {
     return activeEntities.find(entity) != activeEntities.end();
+}
+
+bool EntityManager::match(Entity entity, u_int32_t mask) {
+    return ((entityMasks[entity] | mask) == mask);
 }
 
 void EntityManager::addComponentMask(Entity entity, uint32_t mask) {

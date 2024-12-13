@@ -50,7 +50,7 @@ void Shader::bindMatrix(Mat4x4 matrix, const char* name) {
 	}
 }
 
-void Shader::bindLights(std::vector<LightSource> lights) {
+void Shader::bindLights(std::vector<LightData> lights) {
     glUniform1i(glGetUniformLocation(programID, "numLights"), lights.size());
     for (size_t i = 0; i < lights.size(); ++i) {
         std::string lightBase = "lights[" + std::to_string(i) + "]";
