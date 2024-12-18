@@ -102,7 +102,7 @@ void RenderSystem::renderInstancesArray(std::vector<Entity> entities) {
     auto& shape = registry.getComponent<Material>(entities[0]).shape;
 
     // Use the appropiate shader
-    auto shader = resourceManager.getShader("lib/shaders/textureArray.glsl");
+    auto shader = resourceManager.getShader("lib/shaders/arrayVisual.glsl");
     shader->use();
 
     // Bind the VAO
@@ -117,6 +117,11 @@ void RenderSystem::renderInstancesArray(std::vector<Entity> entities) {
     shader->bindFloat(globalAmbience, "globalAmbience");
     shader->bindVector(camera->position, "eyePos");
     shader->bindLights(getLightSources(8)); // bind 8 closest light sources to shader
+    
+    Vec3 sunDir = Vec3(0.6, -0.6, 0.6);
+    Vec3 sunCol = Vec3(1.0, 0.9, 0.9);
+    shader->bindVector(sunDir, "directionalLightDir");
+    shader->bindVector(sunCol, "directionalLightColor");
 
     // Draw instances
     shape->drawInstancesArray(instances); 

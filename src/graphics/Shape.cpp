@@ -132,6 +132,20 @@ void Shape::loadFromOBJFile(std::string filename, bool loadByIndices) {
     loadShapeToGPU();
 }
 
+void Shape::printVericies() {
+    std::cout << "Verts" << std::endl;
+    for (auto vert : vertices) {
+        vert.position.print();
+        vert.normal.print();
+        std::cout << std::endl;
+    }
+
+    std::cout << "Indicies" << std::endl;
+    for (auto index : indices) {
+        std::cout << index << std::endl;
+    }
+}
+
 void Shape::loadByIndexArray(std::string filename) {
 	std::ifstream f(filename);
     if (!f.is_open()) {

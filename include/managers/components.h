@@ -25,6 +25,12 @@ struct Material {
         shininess(pow(2, clamp(shininess, 0, 10))) {}
 };
 
+struct voxelMaterial {
+    Vec4 color;
+    float reflectivity;
+    int shininess;
+};
+
 struct Transform {
     Vec3 position { 0,0,0 };
     Quat rotation = { 1,0,0,0 };

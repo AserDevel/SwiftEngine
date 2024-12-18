@@ -80,9 +80,9 @@ int main(int argc, char* argv[]) {
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
     std::shared_ptr camera = std::make_shared<Camera>(
-        Vec3(0.0f, 0.0f, 0.0f),  // Position
+        Vec3(0.0f, 2.0f, 0.0f),  // Position
         Vec3(0.0f, 1.0f, 0.0f),  // Up vector
-        0,                       // Yaw
+        toRad(90),               // Yaw
         0,                       // Pitch
         90.0f,                   // FOV
         1,                       // Aspect ratio
@@ -99,40 +99,50 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<Shape> cube = RM.getShape("lib/objects/cube.obj", true);
     std::shared_ptr<Texture> dirtTex = RM.getTexture("lib/textures/dirt.png");
     std::shared_ptr<Texture> cobblestoneTex = RM.getTexture("lib/textures/cobblestone.png");
-    std::shared_ptr<Texture> stoneTex = RM.getTexture("lib/textures/stone.png");
+    std::shared_ptr<Texture> stoneTex = RM.getTexture("lib/textures/stone.png");    
 
+    std::vector<Material> materials;
 
-    Material cobble = { cube, cobblestoneTex, 0.4, 8};
-    Material stone = { cube, stoneTex, 1, 32 };
+    materials.push_back({ cube, dirtTex, 0.2, 4});
+    materials.push_back({ cube, cobblestoneTex, 0.4, 8});
+    materials.push_back({ cube, stoneTex, 0.8, 32 });
+    
     Entity entity;
     Transform transform;
-    Physics physics(Vec3(0,0,0), Vec3(1,-9.812,1));
+    Material material;
+    Physics physics(Vec3(0,0,0), Vec3(0,-9.812,0));
 
-    for (int i = 0; i < 10; i++) {
-        for (int j = -10; j < 10; j++) {
+    for (int i = -20; i < 20; i++) {
+        for (int j = -20; j < 20; j++) {
             entity = registry.createEntity();
-            transform.position =  {i,0,j};
-            registry.addComponent<Material>(entity, cobble);
-            registry.addComponent<Transform>(entity, transform);
-        }   
+
+            transform.position = Vec3(i, 0, j);
+            registry.addComponent(entity, transform);
+
+            int type = rand() % 3;
+            registry.addComponent(entity, materials[type]);
+        } 
     }
 
-    for (int i = -10; i < 0; i++) {
-        for (int j = -10; j < 10; j++) {
+    for (int i = -2; i < 3; i++) {
+        for (int j = 0; j < 5; j ++) {
             entity = registry.createEntity();
-            transform.position =  {i,0,j};
-            registry.addComponent<Material>(entity, stone);
-            registry.addComponent<Transform>(entity, transform);
-        }   
+
+            transform.position = Vec3(i, j+1, -10);
+            registry.addComponent(entity, transform);
+            //registry.addComponent(entity, physics);
+            registry.addComponent(entity, materials[2]);
+        }
     }
 
     entity = registry.createEntity();
-    transform.position = {-5, 10, 0};
-    transform.rotation = {0, 0, 0};
-    registry.addComponent<Material>(entity, cobble);
-    registry.addComponent<Transform>(entity, transform);
-    registry.addComponent<Physics>(entity, physics);
-    
+    transform.position = Vec3(0, 7, -5);
+    physics = Physics(Vec3(0,0,-5), Vec3(0,0,0));
+    registry.addComponent(entity, transform);
+    registry.addComponent(entity, physics);
+    registry.addComponent(entity, materials[1]);
+    cube->printVericies();
+    /*
     // lights
     entity = registry.createEntity(); 
     LightSource light = {{1,1,1}, 1.0f, 1.0f, 0.07f, 0.035f};
@@ -145,20 +155,13 @@ int main(int argc, char* argv[]) {
     transform.position = { -3,3,-3 };
     registry.addComponent<LightSource>(entity, light);
     registry.addComponent<Transform>(entity, transform);
-
-    entity = registry.createEntity();
-    light.color = { 0,0,1 };
-    transform.position = { 0,10,0 };
-    registry.addComponent<LightSource>(entity, light);
-    registry.addComponent<Transform>(entity, transform);
-
+    */
     float lastFrameTime = SDL_GetTicks() / 1000.0f;
     GameState currentState = NONE;
     while (currentState != QUIT) {
         float currentTime = SDL_GetTicks() / 1000.0f;
         float deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
-        
         // Check for state switching and update systems accordingly
         if (currentState != SM.getState()) {
             currentState = SM.getState();

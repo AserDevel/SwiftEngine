@@ -55,6 +55,8 @@ uniform int numLights;
 uniform Light lights[8];
 uniform vec3 eyePos;
 uniform float globalAmbience;
+uniform vec3 directionalLightDir;
+uniform vec3 directionalLightColor;
 uniform sampler2DArray textureArray;
 
 flat in uint textureIndex;
@@ -63,7 +65,6 @@ in float Reflectivity;
 in vec2 textureCoord;
 in vec3 FragPos;
 in vec3 Normal;
-
 
 out vec4 FragColor;
 
@@ -95,12 +96,25 @@ void main() {
     // Texture color
     vec3 textureColor = vec3(texture(textureArray, vec3(textureCoord, textureIndex)));
     
-    // Light color
-    vec3 norm = normalize(Normal);
+    // Directional variables
+    vec3 normal = normalize(Normal);
     vec3 eyeDir = normalize(eyePos - FragPos);
-    vec3 result = vec3(0.0);
+
+    // Add directional light (sun/moon)
+    vec3 lightDir = normalize(-directionalLightDir); // Sunlight direction
+    // ambient (the directional light has twice the ambience)
+    vec3 ambient = 2.0 * globalAmbience * directionalLightColor;
+    // diffuse
+    vec3 diffuse = max(dot(normal, lightDir), 0.0) * directionalLightColor;
+    // Specular
+    vec3 halfwayDir = normalize(lightDir + eyeDir);
+    vec3 specular = (Reflectivity * pow(max(dot(normal, halfwayDir), 0.0), Shininess)) * directionalLightColor;
+
+    vec3 result = ambient + diffuse + specular;    
+    
+    // Add point lights
     for (int i = 0; i < numLights; ++i) {
-        result += calculateLight(lights[i], norm, FragPos, eyeDir);
+        result += calculateLight(lights[i], normal, FragPos, eyeDir);
     }
 
     // Combine results

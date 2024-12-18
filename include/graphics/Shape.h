@@ -49,6 +49,8 @@ public:
     void drawInstancesArray(std::vector<InstanceData>& instances);
 
     void drawInstancesAtlas(std::vector<InstanceData>& instances);
+
+    void printVericies();
 };
 
 #endif
